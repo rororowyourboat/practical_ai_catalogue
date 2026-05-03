@@ -1,86 +1,92 @@
 # Research Plan: Practical AI Catalogue
 
 ## Overall Context
-Catalogue how current multimodal AI can be applied to real business problems. Uses a multi-dimensional task classification framework (adapted from NIST, Stanford HAI, Sarker 2022) to map every use case along four axes — enabling businesses to assess feasibility, architecture needs, risk, and cost at a glance.
+Catalogue how current multimodal AI can be applied to real business problems. Uses the **Functional Cognitive Task-Analytic Framework (FCTAF)** — a diagnostic framework that decomposes every task into a 5-stage information supply chain, profiled by 3 complexity levers. This enables businesses to predict failure points, select architectures, and measure success at each stage.
 
-## Theoretical Framework
+**Full framework documentation:** [docs/fctaf.md](docs/fctaf.md)
 
-Every AI use case is classified along four dimensions:
+## Theoretical Framework (FCTAF)
 
-### 1. Epistemic Demand (Cognitive Complexity)
-Determines the AI approach and engineering scaffolding required.
-- **Transductive**: Format change, structure preservation (e.g., translation, JSON conversion)
-- **Extractive/Summarization**: Reduce data to dense subset without losing core truth
-- **Generative/Synthetic**: Create new artifacts (code, images, narratives)
-- **Evaluative/Critical**: Assess quality, logic, or ethics of existing information
+### The 5-Stage Task Supply Chain
+Every AI task is a pipeline. A breakdown at any stage produces a wrong outcome.
 
-### 2. Data Grounding (Source Reliability)
-Determines the system architecture.
-- **Closed-World (Grounded)**: Answer exists in provided context → RAG pipeline
-- **Open-World (Unbound)**: Answer from model weights → fine-tuned / prompt-engineered
-- **Augmented (RAG+Tools)**: Hybrid with external tools/search → agent architecture
-
-### 3. Operational Objective (Action Type — NIST)
-The business entry point — what does the human need the system to *do*?
-- **Facilitating Goals**: Content creation, synthesis, drafting
-- **Perceptual Tasks**: Pattern recognition in sensory/data (OCR, anomaly detection)
-- **Cognitive Tasks**: Multi-step reasoning, planning, forecasting
-- **Physical/Functional**: Task execution in digital/physical environments (RPA, browser agents)
-
-### 4. Degree of Determinism (Correctness Metric)
-Determines the level of human oversight and confidence thresholds needed.
-- **Deterministic (Objective)**: Single correct answer → automatable with high confidence
-- **Probabilistic (Subjective)**: Many "good" answers → human-in-the-loop review
-
-### Dimensional Complexity Matrix
-
-| Dimension | Low Complexity | High Complexity |
+| Stage | Process | Bottleneck |
 |---|---|---|
-| Epistemic Demand | Transduction (format change) | Strategic planning / evaluative reasoning |
-| Data Grounding | Closed-world (RAG over known docs) | Open-world (pure generation from weights) |
-| Determinism | Rule-based / objective correctness | Creative / subjective quality |
-| Data Structure | Structured (tables, JSON, forms) | Unstructured (video, audio, natural language) |
+| I. Intent Framing | Goal definition, scoping, constraint setting | Ambiguity Drift |
+| II. Epistemic Mapping | Selecting correct knowledge bases and tools | Tool-Use Blindness |
+| III. Info Retrieval | Extracting verified data from selected sources | Precision Fatigue |
+| IV. Logical Synthesis | Multi-hop reasoning across data points | Hallucination |
+| V. Transduction | Formatting output to target schema/tone | Schema Violation |
 
-### Improvement Vectors (Performance Debugging)
-- **High Epistemic Demand** → Chain-of-Thought, multi-agent workflows, structured decomposition
-- **Low Data Grounding** → RAG, tool use, retrieval augmentation to anchor outputs
-- **High Determinism Required** → Symbolic AI (code execution, calculators) over language prediction
-- **Unstructured Input** → Pre-processing pipelines, modality-specific models, OCR/transcription front-ends
+### 3 Complexity Levers (Task Difficulty Profile)
+| Lever | Low | High |
+|---|---|---|
+| **Synthesis Depth** | Unimodal (1 hop) | Deep Synthesis (5+ hops) |
+| **Epistemic Friction** | Structured (clean SQL) | Entropic (messy PDFs) |
+| **Intent Variance** | Convergent (1 answer) | Divergent (many valid answers) |
+
+### Diagnostic Map
+| Profile | Failure Point | Fix |
+|---|---|---|
+| Open-ended goal | Stage I | Iterative scoping |
+| Messy documents | Stage III | Vector search / reranking |
+| Complex logic | Stage IV | Chain-of-Thought / multi-agent |
+| Strict output format | Stage V | Few-shot / structured output |
+| Wrong data source | Stage II | Router agents / source selection |
+
+### Per-Stage Evaluative Metrics
+| Stage | Metric |
+|---|---|
+| I. Intent Framing | Task Acceptance Rate |
+| II. Epistemic Mapping | Source Relevance Rate |
+| III. Info Retrieval | Precision / Recall / F1 |
+| IV. Logical Synthesis | Faithfulness Score |
+| V. Transduction | Schema Conformance Rate |
 
 ## Current Work To-Dos
-- [ ] Define business function taxonomy (sales, marketing, ops, support, finance, HR, product, legal)
-- [ ] Map AI capabilities to each business function using the 4-dimension framework
-- [ ] Inventory current tools/providers per capability
-- [ ] Evaluate maturity levels, cost, and real-world feasibility
-- [ ] Build catalogue entries with full dimensional tagging
+- [ ] Deepen FCTAF Stage I (Intent Framing) — techniques, patterns, failure taxonomy
+- [ ] Deepen FCTAF Stage II (Epistemic Mapping) — source selection architectures
+- [ ] Deepen FCTAF Stage III (Info Retrieval) — retrieval strategies and benchmarks
+- [ ] Deepen FCTAF Stage IV (Logical Synthesis) — reasoning architectures and limits
+- [ ] Deepen FCTAF Stage V (Transduction) — structured output and format engineering
+- [ ] Define business function taxonomy
+- [ ] Map business functions to FCTAF profiles
+- [ ] Inventory tools with per-stage capability ratings
 
 ## Current Hypotheses
-1. **H1 — Multimodal AI is production-ready for more tasks than businesses assume**: Most businesses are only using text LLMs; vision, audio, and agentic workflows are underutilized. *Prediction: 60-70% of common business tasks have at least one production-ready AI solution.*
-2. **H2 — Integration complexity, not model capability, is the bottleneck**: The main barrier is plumbing (APIs, pipelines, UIs), not what models can do. *Prediction: Deterministic + structured tasks are easy to integrate; probabilistic + unstructured tasks remain hard.*
-3. **H3 — Commodity tooling exists for 80% of common use cases**: Open-source + API solutions cover most needs; custom training is rarely required. *Prediction: Closed-world + transductive tasks are fully commoditized; open-world + evaluative tasks still need bespoke solutions.*
-4. **H4 — The Determinism dimension predicts deployment success**: Use cases with high determinism requirements but low current AI determinism are where most AI projects fail. *Prediction: This misalignment explains the majority of "AI didn't work for us" outcomes.*
+1. **H1 — Multimodal AI is production-ready for more tasks than businesses assume**: Most businesses only use text LLMs; vision, audio, and agentic workflows are underutilized.
+2. **H2 — Stage I and II failures explain most "AI didn't work" outcomes**: The bottleneck isn't model capability — it's intent framing and source selection. Businesses deploy AI at Stage III+ without investing in Stages I-II.
+3. **H3 — Commodity tooling exists for 80% of common use cases**: Open-source + API solutions cover most needs; custom training is rarely required.
+4. **H4 — Intent Variance predicts deployment success**: Convergent tasks (deterministic) are automatable; divergent tasks (probabilistic) need human-in-the-loop. The mismatch between task variance and deployment expectations causes failures.
+5. **H5 — Epistemic Friction is the hidden cost driver**: Structured tasks cost 10x less than entropic tasks with similar Synthesis Depth, because pre-processing (Stage III) dominates engineering effort.
 
-## Phase 1: Foundations
+## Phase 1: Framework Deepening
 - [x] Repository initialized
-- [x] Plan and journal templates set up
-- [x] Theoretical framework defined (4 dimensions)
-- [ ] Define business function taxonomy
-- [ ] Map AI modalities to the 4-dimension framework
-- [ ] Update catalogue templates with dimensional tagging
+- [x] FCTAF framework documented (5 stages + 3 levers + diagnostic map + metrics)
+- [ ] Deep-dive each stage (failure taxonomy, techniques, tooling, benchmarks)
+- [ ] Quantify the 3 levers (numerical ranges, composite scoring)
+- [ ] Test framework against real-world business tasks for validity
 
-## Phase 2: Tool Inventory
+## Phase 2: Business Function Mapping
+- [ ] Define business function taxonomy (sales, marketing, ops, support, finance, HR, product, legal)
+- [ ] Profile each function's common AI tasks on FCTAF dimensions
+- [ ] Identify high-value, low-friction opportunities per function
+- [ ] Create catalogue entries with full pipeline + lever profiles
+
+## Phase 3: Tool Inventory & Architecture Patterns
 - [ ] Survey current multimodal AI tools and providers
-- [ ] Catalogue per business function with capability matrix
-- [ ] Tag each tool's sweet spot on the 4 dimensions
-- [ ] Assess pricing models and cost structures
+- [ ] Rate tools by which pipeline stages they excel at
+- [ ] Document architecture patterns per FCTAF profile
+- [ ] Build cost estimates tied to complexity profile
 
-## Phase 3: Deep Dives
-- [ ] Select 3-5 high-impact business functions for detailed case studies
-- [ ] Document implementation patterns (RAG, agents, multi-modal pipelines)
-- [ ] Identify gaps where dimension mismatch causes failures
-- [ ] Map improvement vectors to real tooling options
+## Phase 4: Case Studies & Validation
+- [ ] Select 3-5 real business use cases
+- [ ] Apply FCTAF analysis → predict failure points
+- [ ] Build and measure against per-stage metrics
+- [ ] Validate/refine framework based on results
 
 ## Done Work
-- [x] Repository initialized
-- [x] Plan and journal templates set up
-- [x] Multi-dimensional classification framework adopted (NIST/HAI/Sarker 2022)
+- [x] Repository initialized with git
+- [x] Initial 4-dimension classification (NIST/HAI/Sarker 2022)
+- [x] FCTAF framework synthesized and documented
+- [x] Plan, journal, catalogue templates, and index updated
