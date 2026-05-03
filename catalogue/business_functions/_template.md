@@ -7,34 +7,44 @@
 
 ### Task 1: [Task Name]
 
-**FCTAF Profile:**
+**FCTAF Complexity Profile:**
 - **Synthesis Depth**: [Unimodal / Multi-hop / Deep Synthesis]
 - **Epistemic Friction**: [Structured / Semi-structured / Entropic]
 - **Intent Variance**: [Convergent / Guided / Divergent]
 
-**Pipeline Analysis:**
-| Stage | Difficulty | Bottleneck Risk | Notes |
-|---|---|---|---|
-| I. Intent Framing | Low/Med/High | [bottleneck or "Low"] | [why] |
-| II. Epistemic Mapping | Low/Med/High | [bottleneck or "Low"] | [which sources needed] |
-| III. Info Retrieval | Low/Med/High | [bottleneck or "Low"] | [data quality] |
-| IV. Logical Synthesis | Low/Med/High | [bottleneck or "Low"] | [reasoning required] |
-| V. Transduction | Low/Med/High | [bottleneck or "Low"] | [output requirements] |
+**Pipeline Architecture:**
+| Stage | Node Type | Edge to Next | Failure Risk | Notes |
+|---|---|---|---|---|
+| I. Intent Framing | [Human/AI/Code] | [Deterministic/Dynamic/Feedback] | Low/Med/High | [why] |
+| II. Epistemic Mapping | [Human/AI/Code] | [Deterministic/Dynamic/Feedback] | Low/Med/High | [which sources] |
+| III. Info Retrieval | [Human/AI/Code] | [Deterministic/Dynamic/Feedback] | Low/Med/High | [data quality] |
+| IV. Logical Synthesis | [Human/AI/Code] | [Deterministic/Dynamic/Feedback] | Low/Med/High | [reasoning type] |
+| V. Transduction | [Human/AI/Code] | [Deterministic/Dynamic/Feedback] | Low/Med/High | [output format] |
 
-**Architecture Pattern**: [Single API / RAG + CoT / Multi-agent / Multi-modal pipeline / Hybrid]
+**Feedback Loops:**
+- [e.g., IV → III: Grounding verification (unverified claims trigger re-retrieval)]
+- [e.g., V → V: Schema validation (format errors trigger re-generation)]
+- Exit conditions: [what terminates each loop]
 
-**Optimization Strategy**: [Which diagnostic map fixes apply]
-- e.g., "High Epistemic Friction → hybrid search + reranking at Stage III"
-- e.g., "Deep Synthesis → multi-agent decomposition at Stage IV"
+**Predicted Primary Failure Point:** [Stage N — reason]
+**Symptomatic Stage:** [where it would show up]
+**Root Cause Diagnostic:** [node type + edge type that enables propagation]
 
-**Success Metrics**:
-- Stage III: Precision X / Recall Y
-- Stage IV: Faithfulness score Z
-- Stage V: Schema conformance W
+**Optimization Strategy:**
+- [e.g., "Dynamic edge I → II → add scope contract (deterministic edge)"]
+- [e.g., "AI Node at Stage IV → add Human review gate or feedback edge to III"]
+- [e.g., "High Epistemic Friction → hybrid search + reranking at Stage III"]
+
+**Success Metrics:**
+| Stage | Metric | Target |
+|---|---|---|
+| I | Task Acceptance Rate | [target] |
+| II | Source Relevance Rate | [target] |
+| III | Precision / Recall / F1 | [target] |
+| IV | Faithfulness Score | [target] |
+| V | Schema Conformance Rate | [target] |
 
 **Maturity**: ★★★☆☆
-
-**Description**: What the AI does and why it matters for this business function.
 
 **Tools/Providers**: [tool links]
 
@@ -42,7 +52,7 @@
 
 **Limitations**: [failure modes, edge cases]
 
-**Human Oversight**: [None / Light / Heavy / Full HITL] — driven by Intent Variance
+**Human Oversight**: [None / Light / Heavy / Full HITL] — driven by Intent Variance + Node assignments
 
 ---
 
@@ -51,18 +61,18 @@
 
 ## Function Summary
 
-**Architecture distribution across tasks:**
-- Single API: [count]
-- RAG pipeline: [count]
-- Multi-agent: [count]
-- Multi-modal: [count]
+**Node distribution across tasks:**
+- Code Nodes: [count]
+- AI Nodes: [count]
+- Human Nodes: [count]
 
-**Risk profile (by Intent Variance):**
-- Fully automatable (convergent): [tasks]
-- Light review (guided): [tasks]
-- Heavy review (divergent): [tasks]
+**Edge risk profile:**
+- Deterministic edges: [count] (low propagation risk)
+- Dynamic edges: [count] (high propagation risk — candidates for contract enforcement)
+- Feedback edges: [count] (need exit conditions)
 
-**Most common failure stage:** [Stage N — reason]
+**Most common primary failure stage:** [Stage N — reason]
+**Most common symptomatic stage:** [Stage N — what people notice]
 
 ## Case Studies / Examples
 - [Example 1]: Link or description
