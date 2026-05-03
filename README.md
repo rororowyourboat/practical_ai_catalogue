@@ -6,6 +6,7 @@ A research catalogue of how current multimodal AI can be applied to real busines
 
 - [Research Plan](plan.md)
 - [Research Journal](journal.md)
+- [Unified Theory of Epistemic Engineering](docs/unified_theory.md)
 - [Technical Mapping: FCTAF vs IR Design Space](docs/ir_fctaf_mapping.md)
 - [Epistemic Architecture: The Map is Not the Territory](docs/epistemic_architecture.md)
 - [Catalogue Index](catalogue/index.md)
