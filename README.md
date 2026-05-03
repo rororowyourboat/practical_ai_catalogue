@@ -6,7 +6,19 @@ A research catalogue of how current multimodal AI can be applied to real busines
 
 - [Research Plan](plan.md)
 - [Research Journal](journal.md)
+- [Technical Mapping: FCTAF vs IR Design Space](docs/ir_fctaf_mapping.md)
+- [Epistemic Architecture: The Map is Not the Territory](docs/epistemic_architecture.md)
 - [Catalogue Index](catalogue/index.md)
+
+## Theoretical Foundations
+
+This catalogue is built on three pillars:
+
+1.  **FCTAF v2 (Functional Cognitive Task-Analytic Framework):** A diagnostic framework for AI task pipelines. [See docs/fctaf.md](docs/fctaf.md).
+2.  **IR Design Space:** Technical best practices from the [Information Retrieval as Epistemic Architecture](https://github.com/rororowyourboat/information_retreival) repository.
+3.  **Epistemic Architecture:** Systems thinking and modeling principles from the [Map is not the Territory](https://github.com/rororowyourboat/map_is_not_territory) repository.
+
+The connection between these is formalized in our **[IR-FCTAF Mapping](docs/ir_fctaf_mapping.md)** and **[Epistemic Architecture Guide](docs/epistemic_architecture.md)**.
 
 ## Repository layout
 

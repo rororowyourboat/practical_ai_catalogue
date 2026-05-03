@@ -75,6 +75,10 @@ Every AI task is a pipeline. A breakdown at any stage produces a wrong outcome.
 - [x] Repository initialized
 - [x] FCTAF v1 documented (5 stages + 3 levers + diagnostic map + metrics)
 - [x] FCTAF v2 documented (added node taxonomy, edge taxonomy, feedback loops, diagnostic procedure, edge-level metrics)
+- [x] Integrated IR Design Space best practices from companion repo
+- [x] Integrated Epistemic Architecture principles (Map is not Territory)
+- [x] Created FCTAF-to-IR technical mapping (docs/ir_fctaf_mapping.md)
+- [x] Created Epistemic Architecture Guide (docs/epistemic_architecture.md)
 - [ ] Deep-dive each stage (failure taxonomy, techniques, tooling, benchmarks)
 - [ ] Formalize stage output contracts (what a passing boundary looks like)
 - [ ] Investigate confidence propagation between stages

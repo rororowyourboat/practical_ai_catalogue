@@ -39,6 +39,19 @@ Which pipeline stages this category of tools primarily addresses:
 | Dynamic (open handoff) | Yes/No | [e.g., natural language context passing] |
 | Feedback (loop support) | Yes/No | [e.g., retry logic, re-generation, refinement] |
 
+## IR Design Space Profile
+*Technical dimensions mapped to [[../information_retreival/10_Design_Space]]*
+
+| Dimension | Implementation | DS Ref |
+|---|---|---|
+| **Data Landscape** | [Unstructured / Semi / Structured] | [[06]] |
+| **Query Landscape** | [Fact / Procedural / Analytical / Contextual] | [[07]] |
+| **Representation** | [Sparse / Dense / Hybrid / Graph] | [[08]] |
+| **Retrieval Engine** | [Lexical / Semantic / Hybrid / Generative] | [[09]] |
+| **Reranking Tier** | [None / Cross-Encoder / LLM-Reranker] | [[10]] |
+| **Context Strategy** | [Naive / Semantic Chunking / Optimization] | [[13/14]] |
+| **Agentic Loop** | [None / Dynamic / Feedback] | [[15/22]] |
+
 ## Tools
 
 ### [Tool Name]
@@ -46,10 +59,8 @@ Which pipeline stages this category of tools primarily addresses:
 - **URL**: [link]
 - **API**: [REST / SDK / CLI / Chat]
 - **Pricing**: [model]
-- **FCTAF Stage Affinity**: [which stages it handles best]
-- **Node Types**: [which actor types it supports]
-- **Complexity Sweet Spot**: [where it performs best on the 3 levers]
-- **Edge Support**: [deterministic/dynamic/feedback capabilities]
+- **FCTAF Profile**: [Stages, Node Types, Complexity Levers]
+- **IR Design Profile**: [Representation, Retrieval, Reranking, Loop]
 - **Key Strengths**: [bullet list]
 - **Limitations**: [bullet list]
 - **Best For**: [specific use case patterns]

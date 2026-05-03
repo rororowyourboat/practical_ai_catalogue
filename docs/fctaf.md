@@ -38,6 +38,8 @@ The system must understand *what* the user actually wants — not just the liter
 #### Stage II: Epistemic Mapping
 Given a well-framed intent, the system must select *where* to look. This includes choosing knowledge bases, APIs, databases, or tools. Wrong mapping means the system solves the right problem with the wrong data.
 
+**Technical Foundation:** See **[[ir_fctaf_mapping]]** for how **Data vs Query Landscapes [[DS-05,06]]** define this stage.
+
 **Examples:**
 - Tax question routed to general training data instead of current tax code database
 - Customer query routed to product docs instead of order history
@@ -46,6 +48,8 @@ Given a well-framed intent, the system must select *where* to look. This include
 
 #### Stage III: Info Retrieval
 Given the right source, extract the right data points. This is where vector search quality, chunking strategy, and retrieval precision matter.
+
+**Technical Foundation:** This stage is the direct application of the **IR Design Space**. See **[[ir_fctaf_mapping]]** for mapping specific techniques like **Reranking [[DS-10]]** and **Chunking [[DS-13]]**.
 
 **Examples:**
 - Finding the specific clause in a 200-page contract
