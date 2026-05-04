@@ -1,0 +1,640 @@
+# Unified Theory of Epistemic Engineering (v3)
+
+> **Validation status:** This is a synthesis framework, not an empirically validated causal model. Its primary value is *triage* — helping a team decide whether a problem belongs to AI, where on the capability/inspectability tradeoff a system should sit, and where tensions will accumulate. Its secondary value is *diagnostic* — explaining why a built system is failing. Predictive claims are flagged in [Section 11](#11-open-claims--validation-status).
+
+> **Audience:** This framework is most useful for teams building AI systems in domains where individual decisions must be defensible to adversarial post-hoc scrutiny — engineering bureaucracies (NASA, aerospace, infrastructure), high-capital-risk environments (regulated financial services, energy, defence), and legal or regulatory bureaucracies (courts, healthcare, insurance, government adjudication). Teams in capability-end domains (consumer recommendations, creative tools, internal productivity assistants) will find parts of the framework useful but its heavier machinery is over-engineered for their problems.
+
+---
+
+## 1. Core Thesis
+
+AI implementation is not primarily a software problem. It is an **Epistemic Engineering** problem.
+
+The central act of epistemic engineering is choosing — explicitly and defensibly — where a system sits on the **capability/inspectability tradeoff**, and then engineering the attestation surfaces that make that choice operational.
+
+Larger, more agentic, more integrated AI systems are more capable. They are also less inspectable, because their capability comes precisely from the integration that defeats decomposition. This is not a temporary engineering limitation that better AI will eventually erase. It is a structural tension. Capability and inspectability trade against each other in a continuous curve, and managing that curve — not pretending it doesn't exist — is the work.
+
+In domains where institutional trust depends on the ability to defend individual decisions to outside scrutiny, the tradeoff must be navigated toward the inspectability end. In domains where trust depends on aggregate performance and individual decisions are not adjudicated, the tradeoff can be navigated toward the capability end. The technology does not determine the right position; the domain's normative requirements do.
+
+Most candidate AI projects either fail in production or never should have been started. The common root cause is a mismatch between three things — the **Territory** (what the business reality actually is), the **Map** (how data represents that reality), and the **View** (what the AI projects as output) — compounded by an unexamined or wrong position on the capability/inspectability curve. This framework's primary job is to surface those misalignments and that tradeoff *before* a system is built. Its secondary job is to diagnose them when they emerge in a system that was built anyway.
+
+```mermaid
+flowchart LR
+    T["Territory<br/>Business reality"] -->|"capture / abstraction loss"| M["Map<br/>Data + ontology"]
+    M -->|"representation / retrieval loss"| V["View<br/>Purpose-specific projection"]
+    V -->|"presentation / action loss"| O["AI Output<br/>Decision support"]
+
+    classDef territory fill:#FFE08A,stroke:#8A6400,color:#111111;
+    classDef map fill:#9CDCFE,stroke:#005A8A,color:#111111;
+    classDef view fill:#A7F3D0,stroke:#047857,color:#111111;
+    classDef output fill:#D8B4FE,stroke:#6B21A8,color:#111111;
+
+    class T territory;
+    class M map;
+    class V view;
+    class O output;
+```
+
+A note on what this framework is *not*. It is not a benchmark, not an evaluation methodology, and not a replacement for production observability. It is a vocabulary and a set of structured questions. It is most useful before a project starts and most diagnostic when failures cross stage boundaries.
+
+---
+
+## 2. The Capability / Inspectability Tradeoff
+
+This is the framework's organising principle. Every architectural choice in an AI system can be located as a point on a continuous curve, with one end optimised for capability, flexibility, speed, and convenience, and the other end optimised for inspectability, attestation, auditability, and per-decision accountability.
+
+### The Curve
+
+```mermaid
+flowchart LR
+    A["Capability End<br/>Larger models<br/>Agentic loops<br/>Integrated reasoning<br/>Dynamic edges<br/>Output-only attestation"]
+    B["Inspectability End<br/>Decomposed pipelines<br/>Verifier nodes<br/>Externalised stages<br/>Deterministic edges<br/>Per-stage attestation"]
+
+    A <-->|"continuous tradeoff"| B
+
+    classDef cap fill:#FCA5A5,stroke:#B91C1C,color:#111111;
+    classDef ins fill:#A7F3D0,stroke:#047857,color:#111111;
+
+    class A cap;
+    class B ins;
+```
+
+Within a region of the curve, architectural choices tune the system smoothly. A team can externalise one more stage, add one more verifier, accept one more attestation latency cost, and the system slides along the curve in proportion. The framework's vocabulary — Stages, Nodes, Edges, Attestation surfaces, all introduced below — is the toolkit for navigating this continuous region.
+
+A footnote on geometry. The 2D curve is a teaching device. The actual tradeoff is multi-dimensional: capability, inspectability, latency, cost, and operational complexity all interact. A 2D rendering loses these dimensions but preserves the most important relationship — the structural tension between integration and decomposition — and a higher-dimensional rendering would be unteachable. Sophisticated readers should treat the curve as a projection of a hyperplane onto the two dimensions that matter most for the framework's purposes.
+
+### The Phase Shift
+
+Somewhere along the curve, the regime changes. Below a threshold, the system is run as a **governance contract** — the institution must be able to defend individual decisions, so attestation surfaces are non-negotiable and the framework's full machinery applies. Above the threshold, the system is run as a **capability artefact** — trust is established through aggregate performance, not per-decision defensibility, and the framework's heavier machinery would be over-engineering.
+
+The phase shift is not a point where teams "decide to care less about inspectability." It is where the *form* of trust changes from per-decision attestation to aggregate-outcome trust. These are different kinds of trust, not less of the same kind. A team that crosses the threshold without realising they have crossed it has typically committed an institutional error: deploying a system that operates as a capability artefact in a context that demands a governance contract.
+
+### Locating the Phase Shift: Three Signals
+
+The phase shift sits roughly at the boundary between domains that require per-decision defensibility and domains that tolerate aggregate-outcome trust. Three signals locate it:
+
+**Signal 1: Individuated vs aggregated decisions.** Domains that adjudicate individual cases — medical diagnosis, legal advice, sentencing, loan approval, insurance claims, regulatory adjudication, mission-critical engineering decisions — require per-decision attestation because the individual or institution affected has standing to challenge a specific decision. Domains that operate on populations — search ranking, content recommendation, ad targeting, marketing personalisation — tolerate aggregate-outcome trust because no individual case has standing to demand justification.
+
+**Signal 2: Adversarial post-hoc scrutiny.** Will the institution have to reconstruct, after a failure, exactly why a specific decision was made, who was responsible, and whether the process was defensible? NASA after a launch anomaly, a bank after a trading loss, a court after an appeal, a hospital after a malpractice claim, a regulator after an enforcement action — all face this requirement. A consumer app does not. The presence of adversarial post-hoc reconstruction is the strongest single signal that a domain sits below the phase shift.
+
+**Signal 3: Reversibility of decisions.** A misrouted ticket is recoverable. A misdiagnosed cancer, a mis-launched rocket, a mis-sentenced defendant, a mis-approved loan that triggers cascading exposure — these are not. Irreversibility shifts a domain toward the inspectability end because the cost of failure cannot be absorbed by aggregate performance.
+
+Domains that score strongly on all three signals — engineering bureaucracies like NASA, high-capital-risk environments like investment banking and infrastructure, legal and regulatory bureaucracies — sit unambiguously below the phase shift. They are the framework's primary audience. Domains that score weakly on all three sit above the shift; the framework's heavier machinery is not for them. The interesting cases are domains that score on some signals but not others, and the framework has the most to say about navigating these.
+
+### Phase-Shift Drift
+
+The framework names a primary failure mode of AI adoption in inspectability-end domains: the gravitational pull toward the capability end. The drift is real, it is economically rational at the level of the individual decision-maker (who benefits from speed, flexibility, and convenience), and it is institutionally catastrophic when it accumulates in a domain that structurally requires per-decision attestation.
+
+Drift typically manifests as a sequence of locally reasonable decisions: a more capable model swapped in for an interpretable one because evals improved; stages integrated more tightly because latency mattered for a demo; a Dynamic Edge accepted where a Deterministic Edge was originally specified because the contract felt too restrictive in practice; verifier nodes deferred to a later release because they slowed the build. Each step looks defensible. The cumulative drift is a system that no longer meets its domain's normative requirements, with no single responsible decision to roll back.
+
+The framework's warning: in inspectability-end domains, drift toward the capability end should be treated as a first-class risk and tracked explicitly. Architecture review should include a periodic re-examination of where the system actually sits on the tradeoff curve, compared with where it was specified to sit, and what conditions (regulatory, institutional, normative) are anchoring the placement.
+
+---
+
+## 3. Key Concepts: Territory, Map, View
+
+These three terms are used precisely throughout this framework.
+
+**Territory** — the raw reality of the domain: actual contracts, actual user behaviour, actual market dynamics. You never work directly with the Territory. Every tool, schema, and model works with a partial capture of it.
+
+**Map** — the ontological commitment a team makes about what exists in the Territory: what counts as an entity, what properties it has, what relates to what. When an engineering team decides a "user" is a row with an email address and a timestamp, they have made an ontological commitment. These look like technical decisions because they are expressed in technical language; they are epistemic claims about what matters.
+
+**View** — a deliberate, lossy projection of the Map for a specific purpose. A View is not merely a summary. It is a semantic commitment about what a particular reader, asking a particular question, should see — and, more importantly, should *not* see. The subway map hides distances, hills, and neighbourhoods to preserve only connection topology. The balance sheet hides most of the business to expose only financial position at a moment in time. Both are useful *because* of what they refuse to show.
+
+**Key principle:** what a View hides is more important than what it shows. There is no neutral View. The structure of the loss is the craft.
+
+### The Pragmatic / Semantic / Syntactic Trichotomy
+
+Every operation a system performs over representations belongs to one of three layers:
+
+- **Pragmatic** — concerns purpose-in-context: *who is asking, what they want it for, what counts as a satisfactory answer*. Pragmatic operations frame intent and select what is relevant.
+- **Semantic** — concerns reference and truth: *do the representations actually map to the world; do the claims correspond to the evidence*. Semantic operations retrieve, interpret, and reason.
+- **Syntactic** — concerns form: *does the output conform to the required shape, format, and contract*. Syntactic operations project results into consumable artefacts.
+
+The trichotomy is **directional**: pragmatic errors corrupt semantic operations; semantic errors corrupt syntactic ones; the reverse is not true. You cannot fix a pragmatic failure by improving syntax. This directionality is the deep reason loss propagates downstream rather than upstream.
+
+---
+
+## 4. The Three-Layer Stack
+
+This framework rests on three bodies of work. Each layer is not independent — each one constrains the one below it.
+
+```mermaid
+flowchart TB
+    L1["Layer 1: Epistemic Discipline<br/>Do not collapse Territory, Map, and View"]
+    L2["Layer 2: IR Design Space<br/>Choose representations and retrieval deliberately"]
+    L3["Layer 3: FCTAF<br/>Assign nodes and edge contracts in production"]
+    P["Production AI System<br/>Managed information supply chain"]
+
+    L1 -->|"sets obligation"| L2
+    L2 -->|"specifies representation choices"| L3
+    L3 -->|"manages loss across stages"| P
+
+    M1["Without Layer 1:<br/>tool confused with task"]
+    M2["Without Layer 2:<br/>loss profile chosen accidentally"]
+    M3["Without Layer 3:<br/>no pipeline accountability"]
+
+    L1 -.-> M1
+    L2 -.-> M2
+    L3 -.-> M3
+
+    classDef layer fill:#D8B4FE,stroke:#6B21A8,color:#111111;
+    classDef system fill:#A7F3D0,stroke:#047857,color:#111111;
+    classDef warning fill:#FCA5A5,stroke:#B91C1C,color:#111111;
+
+    class L1,L2,L3 layer;
+    class P system;
+    class M1,M2,M3 warning;
+```
+
+**Layer 1 — Epistemic Discipline** governs conceptual hygiene. It establishes the obligation to keep Territory, Map, and View distinct, to acknowledge that every representation involves deliberate loss, and to maintain the directionality of the pragmatic→semantic→syntactic chain. Without this layer, teams conflate the tool with the task and cannot explain why a well-built system keeps producing wrong answers.
+
+**Layer 2 — IR Design Space** provides the technical vocabulary for making representation decisions explicit. It maps the *Data Landscape* (structured, semi-structured, entropic) against the *Query Landscape* (Fact, Procedural, Analytical, Contextual) to specify which representation technique (Sparse, Dense, Graph, Summarised) and retrieval technique (Lexical, Semantic, Hybrid, Generative) is appropriate for the task.
+
+**Layer 3 — FCTAF** operationalises the pipeline. It breaks the task into five discrete stages, assigns Node types to each, and defines Edge contracts between stages. It provides the structure for managing information loss across the supply chain — and for the attestation surfaces that make stage-level oversight possible.
+
+### The Causal Chain
+
+Layer 1 tells you **what not to collapse:** do not conflate the Map with the Territory; do not conflate the View with the Map; do not invert the pragmatic→semantic→syntactic order.
+
+Layer 2 tells you **how to represent:** given that every representation is a structured loss, which losses are acceptable? What representation preserves what the Query Landscape requires?
+
+Layer 3 tells you **who manages each loss and which stages must be externalised for attestation:** which Node type owns each stage, which Edges enforce contracts, which transitions require attestation surfaces given the system's position on the capability/inspectability curve.
+
+---
+
+## 5. How Loss Propagates Through AI Systems
+
+Every representation involves loss. The engineering question is not *can we avoid loss?* but *can we control which losses we take, at which stages, and which losses must be exposed to attestation before they propagate?*
+
+### The Directionality Principle
+
+Loss flows in one direction. Pragmatic errors corrupt every downstream semantic and syntactic operation. Semantic errors corrupt every downstream syntactic operation. Syntactic errors do not corrupt upstream operations — they merely fail the consumer.
+
+This is why fixing a wrong-question failure with prompt-engineering gymnastics or schema tightening does not work. The pragmatic error has already propagated; everything downstream is built on it. The repair must happen upstream of the error, not downstream.
+
+### Three Loss Failure Modes
+
+These three modes operate at different levels of the system. They often co-occur in real failures.
+
+**1. Structural Collapse** (a coupling pattern) — layers that should remain separate get welded together. A dashboard is built directly against a schema designed for one specific question. When the question changes, the schema must change, which breaks the dashboard, forcing a rebuild of both.
+
+**2. Silent Propagation** (a mechanism) — a loss at an upstream stage passes through a Dynamic Edge undetected and presents as a symptom at a downstream stage. The observer watching the symptomatic stage sees the wrong failure type. Dynamic Edges increase the gap between primary and symptomatic failure because they allow malformed outputs to pass unchecked. In governance-contract systems, Dynamic Edges at high-risk transitions are the primary source of unattested failures.
+
+**3. Epistemic Collapse** (a team cognitive state) — the team stops distinguishing the Territory from the Map. The schema is treated as the source of truth rather than as a partial model of it. When the Territory changes, the team discovers they have been reasoning about the Map while the Territory drifted away.
+
+```mermaid
+flowchart LR
+    A["Primary failure<br/>Map omits relevant entity"]
+    B["Stage II<br/>wrong source universe"]
+    C["Stage III<br/>incomplete evidence"]
+    D["Stage IV<br/>unsupported conclusion"]
+    E["Observed symptom<br/>plausible but wrong output"]
+    F["Correct fix<br/>repair Map / source routing"]
+
+    A --> B
+    B -->|"Dynamic Edge passes malformed plan"| C
+    C -->|"evidence gap hidden"| D
+    D --> E
+    A -.-> F
+
+    classDef failure fill:#FCA5A5,stroke:#B91C1C,color:#111111;
+    classDef stage fill:#D8B4FE,stroke:#6B21A8,color:#111111;
+    classDef symptom fill:#FFE08A,stroke:#8A6400,color:#111111;
+    classDef fix fill:#A7F3D0,stroke:#047857,color:#111111;
+
+    class A failure;
+    class B,C,D stage;
+    class E symptom;
+    class F fix;
+```
+
+### Loss as a Design Input
+
+The IR Design Space provides vocabulary for specifying loss at the representation layer:
+
+- A **Sparse representation** (BM25, TF-IDF) preserves lexical signal; it loses semantic relatedness.
+- A **Dense representation** (embeddings) preserves semantic relatedness; it loses exact-term recall.
+- A **Graph representation** preserves relational structure; it loses distributional properties.
+
+Choosing a representation technique is a claim about which losses the downstream Query Landscape can tolerate. The deeper failure is choosing without knowing what loss profile the task can tolerate.
+
+---
+
+## 6. Problem Characterisation
+
+Before deciding whether to build with AI, characterise the problem in this framework's vocabulary. A problem profile has four dimensions; the interaction between them determines whether AI is a fit and where on the capability/inspectability curve the system should sit.
+
+### The Four Dimensions
+
+**1. Synthesis Depth** — how many reasoning hops separate the input from the answer.
+
+| Level | Profile | Architectural Implication |
+|---|---|---|
+| **D1** | Single-step lookup or classification | Single Node sufficient |
+| **D3** | Multi-step retrieval and combination | Pipeline required; intermediate validation possible |
+| **D5** | Multi-source synthesis with inferential chaining | Multi-stage with explicit checkpoints; faithfulness becomes hard |
+| **D∞** | Open-ended exploration with unbounded hop count | Agentic architecture required; inspectability degrades sharply |
+
+**2. Epistemic Friction** — how clean the source data is.
+
+| Level | Profile | Architectural Implication |
+|---|---|---|
+| **F-Low** | Structured sources | Standard retrieval techniques work |
+| **F-Mid** | Semi-structured | Normalisation and chunking strategy become load-bearing |
+| **F-High** | Entropic | Heavy preprocessing; representation choice critical; failure rates climb |
+
+**3. Intent Variance** — how many valid answers a single input can have.
+
+| Level | Profile | Architectural Implication |
+|---|---|---|
+| **V-Convergent** | One correct answer | Automatable end-to-end |
+| **V-Bounded** | Several valid answers; constraints distinguish them | Requires explicit user-preference capture |
+| **V-Divergent** | Many valid answers; quality is contextual | Human-in-the-loop required at intent stage |
+
+**4. Consequence Asymmetry** — what failure costs relative to success.
+
+| Level | Profile | Architectural Implication |
+|---|---|---|
+| **C-Symmetric** | Recoverable mistakes | Iteration tolerated; lighter verification |
+| **C-Asymmetric** | Failure costs more than success benefits, but recoverable | Verification required; explicit uncertainty |
+| **C-Catastrophic** | Irreversible, public, regulated, or safety-critical | Determinism preferred; AI may be inappropriate |
+
+### Mission-Criticality and Adversarial Post-Hoc Scrutiny
+
+A fifth dimension is distinct from Consequence Asymmetry and important enough to call out separately: whether the system operates in a context that requires adversarial post-hoc reconstruction of individual decisions.
+
+| Level | Profile | Architectural Implication |
+|---|---|---|
+| **M-None** | No reconstruction requirement | Output-level attestation sufficient |
+| **M-Internal** | Internal reviews and learning loops | Logged-audit attestation; non-blocking |
+| **M-Regulatory** | Regulator, court, or institutional review possible | Stage-level attestation; some blocking surfaces |
+| **M-Adversarial** | Active adversarial scrutiny expected (litigation, audit, accident investigation) | Per-stage blocking attestation; human sign-off at high-consequence transitions |
+
+A system can have C-Asymmetric consequences (recoverable failures) but operate under M-Adversarial scrutiny (regulatory or institutional review of every decision). Medical AI is a clear example: individual misdiagnoses are often recoverable through follow-up testing (asymmetric, not catastrophic) but operate under HIPAA, FDA, and malpractice review (adversarial). The mission-criticality dimension and the consequence dimension must be assessed independently.
+
+### Interaction Effects
+
+The dimensions are not independent. Four interactions matter most:
+
+- **Friction × Depth is multiplicative.** F-Mid at D1 is annoying; F-Mid at D5 is often unsolvable.
+- **Variance × Consequence is multiplicative.** V-Divergent at C-Symmetric is fine; V-Divergent at C-Catastrophic is dangerous.
+- **Depth × Consequence determines diagnosability tolerance.** Deep, catastrophic problems require investments in interpretability and verification, or should not be built.
+- **Mission-Criticality × Depth determines attestation cost.** M-Adversarial at D∞ means every step of an agentic loop must be reconstructable; this is expensive enough that it often forces a re-architecture toward shallower, more decomposed systems.
+
+### The Profile
+
+Write the profile as a five-tuple: `(D, F, V, C, M)`.
+
+Examples:
+
+- A customer-support triage tool routing tickets: `(D1, F-Low, V-Convergent, C-Symmetric, M-None)` — comfortable capability-end fit.
+- A legal AI bot answering termination-risk questions: `(D3, F-Mid, V-Bounded, C-Asymmetric, M-Regulatory)` — buildable, with conditions, on the inspectability side of the phase shift.
+- A NASA flight-readiness assistant: `(D5, F-Mid, V-Bounded, C-Catastrophic, M-Adversarial)` — far below the phase shift; requires per-stage blocking attestation.
+- A research agent producing investment recommendations at a regulated bank: `(D∞, F-High, V-Divergent, C-Asymmetric, M-Adversarial)` — high risk regardless of architecture; the framework should recommend serious scope reduction or a non-AI alternative for the load-bearing decisions.
+
+---
+
+## 7. Suitability Assessment
+
+Given a problem profile, this section produces four outputs: a suitability verdict, a target position on the capability/inspectability curve, a required architectural shape, and a tension forecast.
+
+### The Verdict
+
+**Yes** — AI-suitable with conventional architecture. Profile lies in the lower-difficulty, lower-consequence region with M-None or M-Internal scrutiny. Capability-end placement appropriate; standard observability sufficient.
+
+**Yes-with-conditions** — AI-suitable only if specific conditions are met. Conditions usually include: human-in-the-loop at a particular stage, mandatory verifier nodes, structured intermediate outputs, deterministic edges replacing dynamic ones, explicit Map extension before build, and stage-level attestation surfaces matched to the mission-criticality profile. Most production-worthy AI projects in inspectability-end domains sit here.
+
+**No, or not yet** — the problem exceeds what current AI architectures can adequately serve given the consequence and mission-criticality profile. The framework recommends one of: a non-AI alternative, a deferred build pending tooling improvements, or a scope reduction.
+
+### Target Position on the Tradeoff Curve
+
+The five-tuple profile maps onto a target position:
+
+- **Low D, Low F, Convergent V, Symmetric C, M-None or M-Internal** → capability-end placement is appropriate. Use the largest model that fits the latency budget; integrate stages where it improves quality; minimise overhead.
+- **Mid D/F, Bounded V, Asymmetric C, M-Regulatory** → mid-curve placement. Decompose stages enough for inspection at consequential transitions; verifier nodes at synthesis; explicit attestation surfaces at stages most exposed to scrutiny.
+- **High D/F, Divergent V, Catastrophic C, M-Adversarial** → inspectability-end placement. Decompose all stages; deterministic edges by default; per-stage blocking attestation; human sign-off at consequential transitions; deliberate refusal of capability gains that would require re-integration.
+
+The verdict and the target position are different outputs. A `Yes-with-conditions` verdict does not specify *where* on the curve. The target position translates the verdict into architectural commitment.
+
+### When to Recommend Non-AI Alternatives
+
+A triage-first framework that cannot recommend non-AI alternatives is doing AI advocacy with extra steps. The framework treats these as first-class:
+
+- **Workflow automation** when V-Convergent and the rules are stable. Deterministic systems are more reliable, more explainable, and cheaper.
+- **Better data infrastructure first** when F-High and the friction sources are addressable. Fixing data is often a larger lever than introducing AI to compensate for messy data.
+- **Structured human review** when V-Divergent and C-Asymmetric or higher. Human judgement is the appropriate primary loop, possibly with AI assistance for triage or summarisation.
+- **Decision-tree systems** when D1 and the input space is small. A well-designed form-with-rules outperforms a generative system on simple structured tasks.
+- **Hybrid human-system architectures** when M-Adversarial and the consequence profile makes per-stage attestation expensive. A smaller AI scope inside a larger human-driven process is often more defensible than a larger AI scope that must be wrapped in blocking attestation at every step.
+
+### Architectural Shape (for Yes / Yes-with-conditions)
+
+| Profile Element | Architectural Constraint |
+|---|---|
+| **D1** | Single AI Node; no pipeline orchestration needed |
+| **D3** | Multi-stage pipeline with deterministic edges between stages |
+| **D5** | Multi-stage with explicit verifier nodes; dynamic edges only where ambiguity is irreducible |
+| **D∞** | Agentic architecture; investment in tracing and intermediate-output inspection mandatory |
+| **F-High** | Heavy preprocessing pipeline; representation choice (Section 5) becomes a design decision, not a default |
+| **V-Divergent** | Human-in-the-loop at Stage I; cannot be automated end-to-end |
+| **C-Asymmetric** | Verifier node at Stage IV; explicit uncertainty in output |
+| **C-Catastrophic** | Determinism preferred where possible; structured intermediate outputs at every internal stage |
+| **M-Regulatory** | Stage-level attestation logging; non-blocking audit trail |
+| **M-Adversarial** | Stage-level blocking attestation; human sign-off at consequential transitions |
+
+### Tension Forecast
+
+The framework predicts where tensions will concentrate before the system is built:
+
+- **High Synthesis Depth** concentrates tension at Stage IV (synthesis), expressed as faithfulness risk.
+- **High Epistemic Friction** concentrates tension at Stage III (retrieval), expressed as completeness risk.
+- **High Intent Variance without HITL** concentrates tension at Stage I, expressed as scope-misalignment risk that propagates through every downstream stage.
+- **High Consequence** is not localised — it amplifies the cost of any tension that emerges.
+- **High Mission-Criticality** concentrates tension at *every* stage transition where attestation is required and the architecture has not provided a surface for it. Drift toward the capability end, if uncaught, will accumulate at exactly these points.
+
+---
+
+## 8. FCTAF: The Five-Stage Pipeline
+
+For systems that pass the Suitability Assessment, FCTAF provides the operational structure. Each stage has an Epistemic Objective, a Primary Metric, and a position in the Pragmatic / Semantic / Syntactic chain.
+
+```mermaid
+flowchart LR
+    S1["I. Intent Framing<br/>Pragmatic / Interface<br/>Metric: Legibility"]
+    S2["II. Epistemic Mapping<br/>Pragmatic / Internal<br/>Metric: Identifiability"]
+    S3["III. Info Retrieval<br/>Semantic / Internal<br/>Metric: Observability"]
+    S4["IV. Logical Synthesis<br/>Semantic / Internal<br/>Metric: Faithfulness"]
+    S5["V. Transduction<br/>Syntactic / Interface<br/>Metric: Schema Conformance"]
+    O["Actionable output<br/>final View"]
+
+    S1 -->|"clarified intent"| S2
+    S2 -->|"source plan"| S3
+    S3 -->|"evidence objects"| S4
+    S4 -->|"cited conclusion"| S5
+    S5 --> O
+
+    classDef stage fill:#D8B4FE,stroke:#6B21A8,color:#111111;
+    classDef output fill:#A7F3D0,stroke:#047857,color:#111111;
+
+    class S1,S2,S3,S4,S5 stage;
+    class O output;
+```
+
+### Stage Table
+
+| Stage | Layer | Position | Primary Failure | Common Symptomatic Presentation |
+|---|---|---|---|---|
+| **I. Intent Framing** | Pragmatic | Interface | Scope underspecification | Wrong-question answers; right-shape but off-target outputs |
+| **II. Epistemic Mapping** | Pragmatic | Internal | Source-universe mis-selection | Retrieval gaps; "we never had the document" failures |
+| **III. Info Retrieval** | Semantic | Internal | Evidence incompleteness or irrelevance | Faithful reasoning over the wrong evidence set |
+| **IV. Logical Synthesis** | Semantic | Internal | Unsupported inference | Plausible-but-wrong outputs; confabulated bridges |
+| **V. Transduction** | Syntactic | Interface | Schema or contract violation | Downstream system rejection; consumer-can't-act-on-it failures |
+
+### Stages as Governance Contracts
+
+In capability-end systems, stages are descriptive — they label operations the system performs, but the operations may collapse into a single agentic loop with no inspectable intermediate state. The framework remains useful as a *forensic* decomposition: failures can be attributed post hoc to stage-level causes even when the system did not expose stage-level structure.
+
+In inspectability-end systems, stages are prescriptive — they are the contract the system must expose for human and institutional oversight. The stages are not what the system does internally; they are what the system *owes* its operators in terms of inspectability. Each stage transition becomes an attestation surface (see Section 9). The stages are imposed by the requirements, not given by the architecture.
+
+This is the framework's central insight about agentic systems: the boundary between interface stages (I and V, externally observable) and internal stages (II–IV, model-resident) is not a fact about AI; it is a design choice. A system in an inspectability-end domain that internalises Stages II–IV inside an agentic loop has *chosen* to make them unobservable. A system that exposes them as inspectable artefacts has chosen to make them observable. The choice is dictated by the domain's mission-criticality profile, not by the technology.
+
+### The Externalisation Cost
+
+Externalising an internal stage is not free. It costs latency (each attestation surface adds delay), capability (decomposition often reduces what the system can do compared with end-to-end integration), design complexity (each surface is a new contract to maintain), and operational overhead (each blocking attestation is a potential point of failure for the system as a whole).
+
+The framework does not advocate maximum externalisation. It advocates *deliberate* externalisation — making the position on the capability/inspectability curve a conscious choice driven by the suitability assessment, with the costs accepted explicitly. A team that externalises every stage in a low-stakes context is over-engineering. A team that internalises every stage in an M-Adversarial context is building a system that cannot be defended.
+
+### Stage-to-Layer Mapping
+
+- **Stages I–II** are where Epistemic Discipline (Layer 1) is most critical. Failures here are Map-level failures.
+- **Stage III** is where IR Design (Layer 2) is most critical. Failures here are representation or retrieval failures.
+- **Layer 3 governs all five stages**, but becomes most visible at Stages IV–V, because synthesis and transduction failures expose whether node assignments and edge contracts were adequate throughout the pipeline.
+
+---
+
+## 9. Nodes, Edges, and Attestation
+
+FCTAF stages are filled by Nodes connected by Edges. In governance-contract systems, the Edges are also attestation surfaces. All three taxonomies constrain what a system can do and how defensibly it can do it.
+
+### Node Types
+
+The coarse partition is **AI / Code / Human**. For triage and design, a finer partition of AI Nodes is necessary:
+
+| AI Node Subtype | Purpose | Failure Profile |
+|---|---|---|
+| **Classifier** | Map input to a label from a closed set | Confident wrong labels at distribution edges |
+| **Retriever** | Surface evidence from a corpus | Misses documents the schema cannot represent |
+| **Synthesiser** | Combine evidence into an answer | Confabulates over evidence gaps |
+| **Agent** | Plan and execute multi-step actions with tools | Compounds errors across steps; hard to diagnose |
+| **Verifier** | Check another node's output against a contract | Rubber-stamps when contracts are weak |
+
+Architectural shape decisions should specify Node subtype, not just "AI Node." A problem that fits a Classifier may be misjudged as fitting a Synthesiser, with very different reliability and verification implications. The Agent subtype is the most capability-end choice and the most expensive to wrap in attestation; choose it deliberately.
+
+### Edge Types
+
+Edges between stages enforce contracts on what passes between them.
+
+| Edge Type | Contract | When to Use |
+|---|---|---|
+| **Deterministic** | Output of upstream stage must conform to a fixed schema | High-consequence transitions; verifier insertion points; mandatory in M-Adversarial contexts |
+| **Dynamic** | Output is free-form; downstream stage must interpret | Where ambiguity is irreducible and adds value; inappropriate for high-mission-criticality transitions |
+| **Feedback** | Downstream stage can request upstream re-execution | Agentic loops; iterative refinement |
+
+In inspectability-end systems, Edge selection is the primary mechanism by which a team converts an opaque agentic system into an auditable one. Default to Deterministic Edges and accept Dynamic Edges only where the suitability assessment justifies them.
+
+### Attestation Surfaces
+
+In governance-contract systems, every stage transition is potentially an attestation surface — a point where the upstream output must be inspected and approved (by a human, an automated verifier, or a logged audit) before propagating to the downstream stage.
+
+The framework recognises three attestation types, ordered by strength:
+
+| Attestation Type | Mechanism | Latency | Reliability | When to Use |
+|---|---|---|---|---|
+| **Logged-Audit** | Output is recorded for retrospective inspection; non-blocking | None | Reconstructive only — cannot prevent failure, only investigate it | M-Internal contexts; sampling for M-Regulatory |
+| **Automated-Verifier** | A deterministic checker validates upstream output against a contract; blocks on failure | Low | Reliable for what the contract specifies; misses what it doesn't | M-Regulatory contexts; high-volume transitions where human review is impractical |
+| **Human-Attested** | A person reviews and signs off; blocks on failure | High | Highest — but slow and rate-limited | M-Adversarial contexts; consequential transitions; where institutional accountability requires named human responsibility |
+
+Mission-critical systems often layer them: a blocking automated verifier at every transition, plus a non-blocking logged audit of every input/output, plus sampled human review of consequential transitions. The combination provides defence-in-depth without the latency cost of human-attesting everything.
+
+### Agentic Architectures: The Capability/Inspectability Choice in Microcosm
+
+Agentic systems (multi-step planning, tool use, dynamic re-querying) expand capability and reduce inspectability. They are the clearest example of the framework's central tradeoff playing out at the architectural level.
+
+The triage rules:
+
+- Agentic architectures are appropriate at **D∞** with **C-Symmetric, M-None or M-Internal** profiles. Capability-end placement is justified.
+- Agentic architectures at **C-Asymmetric, M-Regulatory** require *externalised* agentic loops — each tool call logged, each intermediate plan inspectable, each step verifiable. The agent is wrapped in attestation rather than running as a black box.
+- Agentic architectures at **C-Catastrophic, M-Adversarial** are inappropriate without serious investment in step-level attestation, blocking verifiers at every transition, and human sign-off at consequential branches. In many such cases, the framework would recommend a shallower, more decomposed architecture that achieves less but defends more.
+
+The capability/inspectability tradeoff is a first-class architectural decision, not an implementation detail. Naming it explicitly is most of the work.
+
+---
+
+## 10. Diagnostic Protocol
+
+When a system has been built and is failing, the diagnostic protocol locates the primary failure. Use it after the Suitability Assessment, not in place of it — many "diagnostic" failures are actually suitability failures the team didn't catch before building.
+
+Work through these questions in order:
+
+1. **Pragmatic / Semantic / Syntactic Layer** — at which layer does the failure live? This first cut narrows the search space.
+
+2. **Stage Location** — at which FCTAF stage is the symptom visible? Distinguish *symptomatic* failure from *primary* failure.
+
+3. **Interface or Internal** — is the symptom at an interface stage (I or V) or an internal stage (II–IV)? Interface failures are usually directly diagnosable. Internal failures require trace inspection or intermediate-output analysis; if you don't have either, observability investment is the prerequisite to further diagnosis.
+
+4. **Attestation Surface** — was the failed transition required to expose attestation, and if so, did the attestation fire and either fail or pass when it shouldn't have? Many production failures in mission-critical contexts are not failures of the AI but failures of the attestation surface around the AI: the system did the wrong thing and there was no checkpoint to catch it, or the checkpoint passed when it should have blocked. This is diagnosable separately from the AI failure itself, and the remediation is different — it lives in the contract layer, not the model layer.
+
+5. **Node Assignment** — is the Node subtype appropriate for the stage's complexity? Use the subtype taxonomy from Section 9 as the lookup.
+
+6. **Edge Contract** — is there a Dynamic Edge between the symptomatic stage and the one before it? If yes, a primary failure at the prior stage may have passed undetected. Consider replacing it with a Deterministic Edge and an output contract.
+
+7. **Design Mismatch** — does the IR Technique match the Query Landscape (Layer 2)? Mismatches are invisible to FCTAF-level inspection.
+
+8. **Conceptual Collapse** — is the team confusing the Tool with the Task?
+
+9. **Layer Collapse** — has the Map been conflated with the Territory?
+
+10. **Phase-Shift Drift** — has the system drifted toward the capability end since it was specified? Re-examine its current position on the curve against the suitability assessment's target position. A system that has drifted from inspectability-end placement toward capability-end placement is often failing because it is now operating in a regime its domain does not permit, even if no individual decision looks unreasonable in isolation.
+
+### When the Protocol Returns "Model-Internal"
+
+Some failures have no clear primary stage. The model produced an unsupported claim despite clean inputs, clean retrieval, and a clean schema. The framework treats these as *Stage IV semantic failures, model-internal* — distinguishable from upstream-caused Stage IV failures by the absence of any pragmatic or semantic upstream cause. The remediation is verifier nodes, model upgrades, or retrieval-augmented grounding, not upstream pipeline repair.
+
+---
+
+## 11. Worked Example: Legal AI Bot
+
+Consider an AI system answering: *"Can we terminate the Acme vendor agreement without penalty?"*
+
+### Step 1: Problem Characterisation
+
+Profile: `(D3, F-Mid, V-Bounded, C-Asymmetric, M-Regulatory)`.
+
+- **D3**: requires gathering relevant clauses from MSA, amendments, and SOWs, then combining them.
+- **F-Mid**: contracts are PDFs with mixed scanning quality, inconsistent clause numbering across vintages.
+- **V-Bounded**: there are several valid framings of "terminate without penalty"; the user's specific intent disambiguates.
+- **C-Asymmetric**: a wrong answer creates legal and financial exposure but is usually recoverable through human review before action.
+- **M-Regulatory**: legal advice from this system is reviewable in litigation and by professional-responsibility regulators; individual decisions must be defensible.
+
+### Step 2: Suitability Verdict
+
+**Yes-with-conditions.** Conditions: human-in-the-loop at Stage I; explicit Map extension to include all entity types; Verifier Node at Stage IV; Deterministic Edge between Stages III and IV with an evidence-completeness contract; logged-audit attestation at every stage transition with sampled human review of high-stakes outputs.
+
+### Step 3: Target Position on the Tradeoff Curve
+
+Mid-curve placement, leaning toward inspectability. Stages II, III, and IV must be externalised as inspectable artefacts. Edges between consequential transitions (II→III and III→IV) must be Deterministic. The system should not be agentic; the capability gain is not worth the inspectability cost given the M-Regulatory profile.
+
+### Step 4: Architectural Shape
+
+Multi-stage pipeline. Stage I: Human + AI (intent disambiguation, logged). Stage II: Retriever (source router across MSA, amendments, SOW register; route choice attested in audit log). Stage III: Retriever with hybrid representation; evidence completeness verified by automated checker before passing to Stage IV. Stage IV: Synthesiser + Verifier; verifier checks every claim against retrieved evidence and flags absences. Stage V: Transducer with citation-and-risk-rating schema enforced.
+
+### Step 5: Tension Forecast
+
+- F-Mid concentrates tension at Stage III: missed clauses in inconsistently formatted amendments and SOWs.
+- V-Bounded concentrates tension at Stage I: wrong sub-question answered.
+- D3 with C-Asymmetric: faithfulness risk at Stage IV requires verifier investment.
+- M-Regulatory concentrates additional tension at every stage transition: the audit log must be complete, the Verifier outputs must be defensible, and the Stage I human handoff must be documented.
+
+### Step 6: How Failures Manifested in the Original Build (Pre-Framework)
+
+The original build skipped the Suitability Assessment and produced these cascading failures:
+
+**Stage I (Legibility):** answered termination-for-convenience instead of termination-for-breach. *Pragmatic failure predicted by V-Bounded; missing condition was HITL at Stage I.*
+
+**Stage II (Identifiability):** queried main contract repository but not amendments index or SOW register. *Pragmatic failure caused by Map omission — SOW minimum spend obligations were not first-class entities.*
+
+**Stage III (Observability):** missed the SOW #4 minimum spend commitment. *Semantic failure downstream of the Stage II pragmatic failure.*
+
+**Stage IV (Faithfulness):** concluded "you can terminate without penalty." Correct answer: "without the MSA termination fee, but with potential SOW liability." *Semantic failure compounded by the Stage III evidence gap; a Verifier Node would have caught the absence of SOW citations.*
+
+**Stage V (Schema Conformance):** output had no citations, no risk rating, no recommended next steps. *Syntactic failure at the consumer interface.*
+
+```mermaid
+flowchart TD
+    T["Territory<br/>SOW #4 contains minimum spend obligation"]
+    M["Map<br/>no SOW minimum spend entity"]
+    S2["Stage II<br/>SOW register omitted (pragmatic)"]
+    S3["Stage III<br/>SOW #4 §5 missed (semantic)"]
+    S4["Stage IV<br/>concludes: terminate without penalty (semantic)"]
+    S5["Stage V<br/>memo lacks SOW liability caveat (syntactic)"]
+    O["Observed business risk<br/>incomplete legal advice"]
+    C["Correct answer<br/>no MSA fee, but possible SOW liability"]
+
+    T -->|"not represented"| M
+    M -->|"source universe incomplete"| S2
+    S2 -->|"retrieval plan incomplete"| S3
+    S3 -->|"evidence gap"| S4
+    S4 -->|"uncaveated output"| S5
+    S5 --> O
+    S3 -.->|"if SOW #4 retrieved"| C
+
+    classDef territory fill:#FFE08A,stroke:#8A6400,color:#111111;
+    classDef map fill:#9CDCFE,stroke:#005A8A,color:#111111;
+    classDef stage fill:#D8B4FE,stroke:#6B21A8,color:#111111;
+    classDef failure fill:#FCA5A5,stroke:#B91C1C,color:#111111;
+    classDef correction fill:#A7F3D0,stroke:#047857,color:#111111;
+
+    class T territory;
+    class M map;
+    class S2,S3,S4,S5 stage;
+    class O failure;
+    class C correction;
+```
+
+### The Triage Lesson
+
+If the team had run the Suitability Assessment before building and respected the M-Regulatory placement, the SOW omission would have surfaced as a Map-extension condition before code was written. The Verifier Node would have caught the evidence gap at Stage IV. The audit log would have made the failure trivially diagnosable rather than requiring forensic reconstruction. The Stage III, IV, and V failures all trace back to a pragmatic upstream cause (Map omission) compounded by missing attestation surfaces. The diagnostic protocol can locate this after the fact; the suitability assessment can prevent it.
+
+---
+
+## 12. Open Claims / Validation Status
+
+| Claim | Status | Notes |
+|---|---|---|
+| Pipeline decomposition (5 stages) | Grounded | Consistent with Parasuraman (2000), Endsley (1995), CTA literature. Stage boundaries are novel. |
+| Pragmatic / Semantic / Syntactic trichotomy | Grounded | Morris (1938); standard in linguistics and KR. Mapping to FCTAF stages is novel. |
+| Loss-propagation directionality | Theoretically grounded | Follows from the trichotomy's level structure. Empirical confirmation would require failure-mode studies. |
+| **Capability / Inspectability tradeoff curve** | Novel | The framework's central organising claim. Empirically supported by industry experience but not formally validated. |
+| **Phase shift in the tradeoff curve** | Novel | Distinguishes governance-contract from capability-artefact regimes. The location of the shift varies by domain and is operationalised by the three signals. |
+| **Three signals for locating the phase shift** | Novel | Individuated decisions, adversarial post-hoc scrutiny, irreversibility. Claim that these jointly locate the threshold is theoretically motivated but unvalidated. |
+| **Phase-shift drift as primary failure mode** | Novel | Plausible from observed industry patterns; not empirically established. |
+| Node taxonomy (AI / Code / Human + AI subtypes) | Partially grounded | AI/Code/Human simplifies Sheridan & Verplank (1978); subtype taxonomy is novel. |
+| Edge taxonomy (Deterministic / Dynamic / Feedback) | Theoretical | Novel. Edges as attestation surfaces is a further claim. |
+| **Attestation surface taxonomy (Logged / Automated / Human)** | Partially grounded | Standard in safety-critical software (DO-178C, AMLAS); novel in AI-engineering frameworks. |
+| Synthesis Depth as difficulty lever | Grounded | Wei et al. (2022) CoT evidence. D∞ category is novel. |
+| Epistemic Friction as lever | Theoretical | Pirolli & Card (1999). AI-specific cost mapping unvalidated. |
+| Intent Variance as lever | Theoretical | Standard in HCI; partition is the framework's. |
+| Consequence Asymmetry as lever | Novel | Required for triage; not validated against production failure data. |
+| **Mission-Criticality as separate dimension** | Novel | Distinct from consequence; validated by the existence of regulated domains where consequences are recoverable but oversight requirements are absolute. |
+| Lever interaction effects (multiplicative) | Speculative | Plausible but not empirically established. |
+| Solvability ceiling claim | Speculative | The claim that some five-tuples exceed current AI capability is the framework's strongest pre-build claim and the least empirically grounded. |
+| Hallucination as Stage IV failure (with model-internal subtype) | Well-documented | RAGAS (Es 2023), Huang (2023). Upstream-cause framing is novel. |
+| Stage I–II failures dominate production | Speculative | Plausible from RAG literature (Gao 2023) but no systematic production study exists. |
+| Territory / Map / View failure taxonomy | Novel | Synthesised from prior work. No direct prior art in AI engineering. |
+| Interface vs internal stage distinction | Novel | Tracks observability of modern AI systems; falsifiable as interpretability matures. |
+
+**What would validate the framework:**
+
+1. A large-scale study of production AI system failures categorised by FCTAF stage, edge-type, and attestation-surface presence.
+2. Retrospective application of the Suitability Assessment to abandoned or failed AI projects, testing whether the verdict and tension forecast would have predicted failure.
+3. Empirical work on the phase shift: do domains scoring strongly on the three signals actually produce different failure profiles than domains scoring weakly?
+4. Studies of phase-shift drift in deployed systems: does the predicted gravitational pull toward capability-end choices manifest in real organisational settings?
+5. Connections to existing assurance-case frameworks (DO-178C, ISO 26262, AMLAS) — does the framework's vocabulary translate cleanly into existing safety-critical software practice?
+
+---
+
+## 13. How to Use This Document
+
+**For a team starting an AI project in an inspectability-end domain:** read Sections 1–2 for the central tradeoff, Section 3 for vocabulary, then Sections 6 and 7 to characterise the problem and assess suitability. Sections 8–10 become relevant only if the assessment returns Yes or Yes-with-conditions and you are building.
+
+**For a team debugging a built system:** read Sections 1–5 for vocabulary and loss propagation, then Section 10 for the diagnostic protocol. Section 11's worked example shows how the protocol traces a symptomatic failure back to its primary cause. Pay particular attention to the phase-shift drift question (Section 10, item 10) — many production failures in regulated contexts are drift failures rather than build failures.
+
+**For a team in a capability-end domain:** Sections 1–5 give vocabulary that may be useful. Sections 6–10 are over-engineered for your context. The framework's main message for you is the phase shift itself: know which side of it you're on, and resist organisational pressure to apply your design patterns to colleagues working on the other side.
+
+**For a team operating near the phase shift:** the framework is most useful and most contested in your context. The three signals in Section 2 should be applied carefully; if any of them score strongly, default to the inspectability side. Drift is the largest risk; instrument for it explicitly.
+
+The framework's claims are layered. Sections 1–5 are the most stable; Sections 6–7 contain the strongest and least-validated claims and are where the framework most needs empirical work; Sections 8–10 are operational and largely inherit from established practice. Section 12 is honest about which is which.
+
+---
+
+*This is v3. The major changes from v2: the capability/inspectability tradeoff curve is the framework's central organising principle; the phase shift between governance-contract and capability-artefact regimes is named explicitly, with three signals for locating it; phase-shift drift is identified as a primary failure mode in inspectability-end domains; Mission-Criticality is added as a fifth profile dimension distinct from Consequence; Attestation Surfaces are introduced as a first-class architectural concept; the diagnostic protocol gains an attestation question and a drift question; the audience is narrowed explicitly to engineering bureaucracies, high-capital-risk environments, and legal/regulatory bureaucracies, with explicit positioning for capability-end teams.*
